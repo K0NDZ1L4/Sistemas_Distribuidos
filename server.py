@@ -1,40 +1,39 @@
 import socket
-import os
-from _thread import *
-ServerSideSocket = socket.socket()
-host = socket.gethostname()
-port = 5001
-ThreadCount = 0
+
+
+def server_program():
+    # get the hostname
+    # host = socket.gethostname()
+    host = "localhost"
+    port = 8080  # initiate port no above 1024
+
+    server_socket = socket.socket()  # get instance
+    # look closely. The bind() function takes tuple as argument
+    server_socket.bind((host, port))  # bind host address and port together
 
 
 
-try:
-    ServerSideSocket.bind((host, port))
-    ServerSideSocket.listen(5)
-except socket.error as e:
-    print(str(e))
-print('Socket is listening..')
+    # configure how many client the server can listen simultaneously
+    server_socket.listen(4)
+    conn, address = server_socket.accept()  # accept new connection
+    print("Connection from: %s\n" % str(address))
 
-
-def multi_threaded_client(connection):
-    connection.send(str.encode('Hora Atual: 12:00'))
     while True:
-        data = connection.recv(2048).decode('utf-8')
-        data = data.split("/")
-        if data[0] == "0":
-            response = 'responsavel'
-        elif data[0] != "0":
-            response = "nao responsavel"
-        if not data:
+        # receive data stream. it won't accept data packet greater than 1024 bytes
+        data_recv = conn.recv(1024).decode()
+
+        if not data_recv:
+            # if data is not received break
             break
-        connection.sendall(str.encode(response))
-    connection.close()
+
+        else:
+            print("Msg recv from client: " + str(address) + ", = " + str(data_recv))
+            data_recv = input("Send msg: ")
+            conn.send(data_recv.encode())  # send data to the client
+
+    conn.close()  # close the connection
+    print("Finish server!")
 
 
-while True:
-    Client, address = ServerSideSocket.accept()
-    print('Connected to: ' + address[0] + ':' + str(address[1]))
-    start_new_thread(multi_threaded_client, (Client, ))
-    ThreadCount += 1
-    print('Thread Number: ' + str(ThreadCount))
-ServerSideSocket.close()
+if __name__ == '__main__':
+    server_program()
